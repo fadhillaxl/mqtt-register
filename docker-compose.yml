@@ -1,0 +1,49 @@
+version: '3.8'
+
+services:
+  mqtt-register:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: mqtt-register-app
+    restart: unless-stopped
+    working_dir: /var/www
+    volumes:
+      - ./:/var/www
+      - ./storage:/var/www/storage
+    networks:
+      - mqtt-register-network
+
+  nginx:
+    image: nginx:alpine
+    container_name: mqtt-register-nginx
+    restart: unless-stopped
+    ports:
+      - "8000:80"
+    volumes:
+      - ./:/var/www
+      - ./docker/nginx/conf.d:/etc/nginx/conf.d
+    networks:
+      - mqtt-register-network
+
+  db:
+    image: mysql:8.0
+    container_name: mqtt-register-db
+    restart: unless-stopped
+    environment:
+      MYSQL_DATABASE: ${DB_DATABASE:-mqtt_register}
+      MYSQL_ROOT_PASSWORD: ${DB_PASSWORD:-root}
+      MYSQL_PASSWORD: ${DB_PASSWORD:-root}
+      MYSQL_USER: ${DB_USERNAME:-mqtt_register}
+      SERVICE_TAGS: dev
+      SERVICE_NAME: mysql
+    volumes:
+      - ./docker/mysql:/var/lib/mysql
+    ports:
+      - "3306:3306"
+    networks:
+      - mqtt-register-network
+
+networks:
+  mqtt-register-network:
+    driver: bridge 
